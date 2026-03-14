@@ -1,16 +1,26 @@
 # src/evaluate.py: 评估入口
 import argparse
 import os
-import gymnasium as gym
 from stable_baselines3 import DQN, PPO
 from stable_baselines3.common.vec_env import VecVideoRecorder, DummyVecEnv
 from src.configs.scenarios import DQN_CONFIG, PPO_CONFIG
 from src.core.env_factory import make_env
 
+
+def str2bool(value: str) -> bool:
+    value = value.lower()
+    if value in {"true", "1", "yes", "y"}:
+        return True
+    if value in {"false", "0", "no", "n"}:
+        return False
+    raise argparse.ArgumentTypeError("fault_aware must be true/false")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--algo", type=str, choices=["dqn", "ppo"], required=True)
     parser.add_argument("--fault", type=str, default="none", help="none, gain_loss, bias, stuck")
+    parser.add_argument("--fault_aware", type=str2bool, default=True, help="Enable fault-aware observation")
     args = parser.parse_args()
 
     # 1. 配置
@@ -23,13 +33,24 @@ def main():
         ModelClass = PPO
         severity = 0.2 if args.fault == "bias" else 0.5 # 偏置0.2 或 动力损失50%
 
+    print(
+        f"🧪 Evaluation config: algo={args.algo}, fault={args.fault}, "
+        f"severity={severity:.3f}, fault_aware={args.fault_aware}"
+    )
+
     # 2. 准备带录像功能的向量化环境
     video_folder = f"outputs/videos/{args.algo}_{args.fault}"
     os.makedirs(video_folder, exist_ok=True)
 
     def create_env_fn():
         # 这里必须指定 render_mode='rgb_array' 才能录像
-        return make_env(config, fault_type=args.fault, fault_severity=severity, render_mode="rgb_array")
+        return make_env(
+            config,
+            fault_type=args.fault,
+            fault_severity=severity,
+            render_mode="rgb_array",
+            fault_aware=args.fault_aware,
+        )
 
     # 包装成 VecEnv
     vec_env = DummyVecEnv([create_env_fn])

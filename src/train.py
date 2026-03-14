@@ -11,6 +11,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--algo", type=str, choices=["dqn", "ppo"], required=True, help="Choose algo")
     parser.add_argument("--steps", type=int, default=50000, help="Total training timesteps")
+    parser.add_argument("--fault_mode", type=str, choices=["none", "fixed", "random"], default="random")
+    parser.add_argument("--fault", type=str, choices=["none", "stuck", "gain_loss", "bias"], default="none")
+    parser.add_argument("--severity", type=float, default=0.0)
     args = parser.parse_args()
 
     # 1. 准备目录
@@ -20,19 +23,36 @@ def main():
     os.makedirs(model_dir, exist_ok=True)
 
     # 2. 加载配置
+    if args.fault_mode == "none":
+        fault_type = "none"
+        fault_severity = 0.0
+    elif args.fault_mode == "fixed":
+        fault_type = args.fault
+        fault_severity = args.severity
+    else:
+        fault_type = "random"
+        fault_severity = 0.0
+
     if args.algo == "dqn":
         config = DQN_CONFIG
         ModelClass = DQN
-        # DQN 训练时我们先不加故障，让它学会正常开
-        env = make_env(config, fault_type="none")
     else:
         config = PPO_CONFIG
         ModelClass = PPO
-        env = make_env(config, fault_type="none")
+
+    env = make_env(
+        config,
+        fault_type=fault_type,
+        fault_severity=fault_severity,
+        fault_aware=True,
+    )
 
     # 3. 初始化模型
     env = Monitor(env, log_dir)
-    print(f"🔥 Initializing {args.algo.upper()} model...")
+    print(
+        f"🔥 Initializing {args.algo.upper()} model... "
+        f"(fault_mode={args.fault_mode}, fault={fault_type}, severity={fault_severity:.3f}, fault_aware=True)"
+    )
     model = ModelClass(
         "MlpPolicy", 
         env, 
