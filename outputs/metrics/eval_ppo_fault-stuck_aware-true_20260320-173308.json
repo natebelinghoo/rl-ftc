@@ -1,0 +1,17 @@
+{
+  "algo": "ppo",
+  "fault": "stuck",
+  "severity": 0.5,
+  "fault_aware": true,
+  "episodes": 1,
+  "max_steps": 300,
+  "avg_episode_reward": 11.088889181613922,
+  "min_episode_reward": 11.088889181613922,
+  "max_episode_reward": 11.088889181613922,
+  "avg_episode_length": 40.0,
+  "crash_rate": 0.0,
+  "safe_finish_rate": 1.0,
+  "episode_rewards": [
+    11.088889181613922
+  ]
+}

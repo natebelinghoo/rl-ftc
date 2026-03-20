@@ -5,7 +5,7 @@ from typing import Any
 
 class FaultInjectorWrapper(gym.ActionWrapper):
     """
-    故障注入中间件：在动作传给物理引擎之前进行篡改
+    故障注入中间件: 在动作传给物理引擎之前进行篡改
     """
 
     _FAULT_TYPES = ("none", "stuck", "gain_loss", "bias")
@@ -19,10 +19,12 @@ class FaultInjectorWrapper(gym.ActionWrapper):
         # current_* 代表当前 episode 实际生效的故障配置
         self.current_fault_type = "none"
         self.current_severity = 0.0
+        # 连续动作 stuck 使用：冻结到上一时刻执行动作
+        self._last_continuous_action: np.ndarray | None = None
         self._set_fault_for_episode()
 
     def _set_fault_for_episode(self) -> None:
-        """在 reset 前确定本 episode 故障配置（支持 fixed/random）。"""
+        """在 reset 前确定本 episode 故障配置(支持 fixed/random)"""
         if self.fault_type == "random":
             sampled_fault = np.random.choice(self._FAULT_TYPES)
             if sampled_fault == "stuck":
@@ -42,7 +44,7 @@ class FaultInjectorWrapper(gym.ActionWrapper):
 
     def get_fault_vector(self) -> np.ndarray:
         """
-        返回长度为 5 的故障向量:
+        返回长度为 5 的故障向量
         [is_none, is_stuck, is_gain_loss, is_bias, severity]
         """
         one_hot = np.zeros(4, dtype=np.float32)
@@ -54,6 +56,7 @@ class FaultInjectorWrapper(gym.ActionWrapper):
     def reset(self, **kwargs: Any):
         # 每次 reset 都重新采样（仅 random）或恢复固定配置（非 random）
         self._set_fault_for_episode()
+        self._last_continuous_action = None
         return self.env.reset(**kwargs)
 
     def action(self, action: Any) -> Any:
@@ -64,7 +67,7 @@ class FaultInjectorWrapper(gym.ActionWrapper):
         # 动作是整数索引，映射到元动作
         if isinstance(self.action_space, gym.spaces.Discrete):
             if self.current_fault_type == "stuck":
-                # 30%概率卡死（强制保持当前车道，即动作1-LANE_KEEP）
+                # 30%概率卡死(强制保持当前车道，即动作1-LANE_KEEP)
                 # 注意：highway-env中 0:LANE_LEFT, 1:IDLE, 2:LANE_RIGHT
                 if np.random.random() < self.current_severity:
                     return 1
@@ -74,6 +77,15 @@ class FaultInjectorWrapper(gym.ActionWrapper):
         elif isinstance(self.action_space, gym.spaces.Box):
             # 必须 copy，防止修改引用
             faulty_action = np.asarray(action, dtype=np.float32).copy()
+            low = np.asarray(self.action_space.low, dtype=np.float32)
+            high = np.asarray(self.action_space.high, dtype=np.float32)
+
+            if self.current_fault_type == "stuck":
+                # 连续动作卡死：按 severity 概率冻结为上一时刻动作
+                if self._last_continuous_action is not None and np.random.random() < self.current_severity:
+                    return self._last_continuous_action.copy()
+                self._last_continuous_action = np.clip(faulty_action, low, high).astype(np.float32)
+                return self._last_continuous_action.copy()
 
             if self.current_fault_type == "gain_loss":
                 # 动力衰减：油门(索引1)打折
@@ -84,6 +96,8 @@ class FaultInjectorWrapper(gym.ActionWrapper):
                 # 方向跑偏：转向(索引0)增加偏差
                 faulty_action[0] = faulty_action[0] + self.current_severity
 
+            faulty_action = np.clip(faulty_action, low, high).astype(np.float32)
+            self._last_continuous_action = faulty_action.copy()
             return faulty_action
 
         return action

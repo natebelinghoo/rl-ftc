@@ -9,7 +9,7 @@ TWrapper = TypeVar("TWrapper", bound=gym.Wrapper)
 
 def find_wrapper(env: gym.Env, wrapper_cls: Type[TWrapper]) -> Optional[TWrapper]:
     """
-    安全地沿 wrapper 链向下查找指定类型，避免直接写死 env.env.env 的脆弱访问。
+    安全地沿 wrapper 链向下查找指定类型, 避免直接写死 env.env.env 的脆弱访问
     """
     current = env
     while isinstance(current, gym.Wrapper):
@@ -23,8 +23,8 @@ def find_wrapper(env: gym.Env, wrapper_cls: Type[TWrapper]) -> Optional[TWrapper
 
 class FaultAwareObservationWrapper(gym.ObservationWrapper):
     """
-    Fault-aware observation 核心实现：
-    将原始观测 flatten 后，拼接故障元信息向量 [one-hot fault type + severity]。
+    Fault-aware observation 核心实现: 
+    将原始观测 flatten 后，拼接故障元信息向量 [one-hot fault type + severity]
     """
 
     def __init__(self, env: gym.Env):

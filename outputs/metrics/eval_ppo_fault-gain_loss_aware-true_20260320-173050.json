@@ -1,0 +1,26 @@
+{
+  "algo": "ppo",
+  "fault": "gain_loss",
+  "severity": 0.5,
+  "fault_aware": true,
+  "episodes": 10,
+  "max_steps": 300,
+  "avg_episode_reward": 17.16000043153763,
+  "min_episode_reward": 7.755555748939514,
+  "max_episode_reward": 25.400000631809235,
+  "avg_episode_length": 40.0,
+  "crash_rate": 0.0,
+  "safe_finish_rate": 1.0,
+  "episode_rewards": [
+    23.088889479637146,
+    11.288889169692993,
+    25.400000631809235,
+    24.57777839899063,
+    13.355555891990662,
+    7.755555748939514,
+    9.133333563804626,
+    24.000000596046448,
+    19.62222272157669,
+    13.377778112888336
+  ]
+}
