@@ -56,12 +56,14 @@ PPO_CONFIG = {
         }
     },
     "algo_params": {
-        "learning_rate": 5e-4,
-        "n_steps": 2048,
+        "learning_rate": 3e-4,
+        "n_steps": 4096,
         "batch_size": 64,
-        "n_epochs": 10,
-        "gamma": 0.90,
+        "n_epochs": 5,
+        "gamma": 0.99,
         "gae_lambda": 0.95,
-        "ent_coef": 0.01,
+        "ent_coef": 0.0,
+        "clip_range": 0.2,
+        "max_grad_norm": 0.5,
     }
 }
