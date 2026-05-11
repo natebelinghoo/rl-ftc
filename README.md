@@ -1,14 +1,20 @@
-# 1. 训练 DQN
-python src/train.py --algo dqn  --steps 30000
+# 训练 DQN（离散动作，仅采样 none/stuck 有效故障）
+python src/train.py --algo dqn
 
-# 2. 训练 PPO
+# 训练 PPO（连续动作，采样 none/stuck/gain_loss/bias）
 python src/train.py --algo ppo
 
-# 3. 评估 - 生成正常视频
-python src/evaluate.py --algo ppo --fault none
+# 训练未增强观测基线
+python src/train.py --algo dqn --fault_aware false
+python src/train.py --algo ppo --fault_aware false
 
-# 4. 评估 - 生成故障视频
-# PPO 遇到方向盘跑偏故障
-python src/evaluate.py --algo ppo --fault bias 
-# DQN 遇到无法变道故障
+# 评估
+python src/evaluate.py --algo dqn --fault none
 python src/evaluate.py --algo dqn --fault stuck
+python src/evaluate.py --algo ppo --fault none
+python src/evaluate.py --algo ppo --fault bias
+python src/evaluate.py --algo ppo --fault gain_loss
+python src/evaluate.py --algo ppo --fault stuck
+
+# 如需生成视频，显式打开 record_video
+python src/evaluate.py --algo ppo --fault bias --record_video true

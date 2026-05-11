@@ -1,69 +1,117 @@
 # src/configs/scenarios.py: 定义 DQN 和 PPO 的参数配置
-import numpy as np
 
 # DQN (离散动作 - 变道调度)
 DQN_CONFIG = {
     "env_id": "highway-fast-v0",
+    "default_steps": 60000,
     "config": {
         "action": {
             "type": "DiscreteMetaAction",
         },
         "lanes_count": 4,
-        "vehicles_count": 30, 
-        "duration": 40,
+        "vehicles_count": 14,
+        "duration": 50,
+        "collision_reward": -1.0,
+        "right_lane_reward": 0.1,
+        "high_speed_reward": 0.4,
+        "lane_change_reward": -0.02,
+        "reward_speed_range": [20, 30],
+        "normalize_reward": True,
         "observation": {
             "type": "Kinematics",
-            "vehicles_count": 15,
+            "vehicles_count": 8,
             "features": ["presence", "x", "y", "vx", "vy", "cos_h", "sin_h"],
             "features_range": {
                 "x": [-100, 100],
                 "y": [-100, 100],
                 "vx": [-20, 20],
-                "vy": [-20, 20]
+                "vy": [-20, 20],
             },
             "absolute": False,
-            "order": "sorted"
-        }
+            "order": "sorted",
+        },
+    },
+    "reward": {
+        "collision_penalty": 4.0,
+        "offroad_penalty": 2.0,
+        "discrete_action_penalty": 0.02,
+        "continuous_smooth_penalty": 0.0,
+        "target_speed": 27.0,
+        "speed_penalty": 0.005,
     },
     "algo_params": {
-        "learning_rate": 5e-4,
-        "buffer_size": 15000,
-        "learning_starts": 200,
-        "batch_size": 32,
-        "gamma": 0.8,
+        "learning_rate": 3e-4,
+        "buffer_size": 50000,
+        "learning_starts": 1000,
+        "batch_size": 64,
+        "gamma": 0.95,
         "train_freq": 1,
         "gradient_steps": 1,
-        "target_update_interval": 50,
-    }
+        "target_update_interval": 500,
+        "exploration_fraction": 0.35,
+        "exploration_initial_eps": 1.0,
+        "exploration_final_eps": 0.05,
+        "policy_kwargs": {"net_arch": [256, 256]},
+    },
 }
 
 # PPO (连续动作 - 动力学控制)
 PPO_CONFIG = {
-    "env_id": "highway-fast-v0", 
+    "env_id": "highway-fast-v0",
+    "default_steps": 150000,
     "config": {
         "action": {
             "type": "ContinuousAction",
             "longitudinal": True,
             "lateral": True,
+            "acceleration_range": [-3.0, 3.0],
+            "steering_range": [-0.12, 0.12],
+            "speed_range": [18.0, 32.0],
         },
         "lanes_count": 4,
-        "vehicles_count": 10,
-        "duration": 40,
+        "vehicles_count": 6,
+        "duration": 50,
+        "ego_spacing": 2.5,
+        "vehicles_density": 0.7,
+        "collision_reward": -1.0,
+        "right_lane_reward": 0.1,
+        "high_speed_reward": 0.4,
+        "lane_change_reward": 0.0,
+        "reward_speed_range": [20, 30],
+        "normalize_reward": True,
+        "offroad_terminal": True,
         "observation": {
             "type": "Kinematics",
             "vehicles_count": 5,
             "features": ["presence", "x", "y", "vx", "vy", "cos_h", "sin_h"],
-        }
+            "features_range": {
+                "x": [-100, 100],
+                "y": [-100, 100],
+                "vx": [-20, 20],
+                "vy": [-20, 20],
+            },
+            "absolute": False,
+            "order": "sorted",
+        },
+    },
+    "reward": {
+        "collision_penalty": 4.0,
+        "offroad_penalty": 2.0,
+        "discrete_action_penalty": 0.0,
+        "continuous_smooth_penalty": 0.005,
+        "target_speed": 27.0,
+        "speed_penalty": 0.002,
     },
     "algo_params": {
-        "learning_rate": 3e-4,
-        "n_steps": 4096,
-        "batch_size": 64,
-        "n_epochs": 5,
+        "learning_rate": 2.5e-4,
+        "n_steps": 2048,
+        "batch_size": 128,
+        "n_epochs": 8,
         "gamma": 0.99,
         "gae_lambda": 0.95,
         "ent_coef": 0.0,
         "clip_range": 0.2,
         "max_grad_norm": 0.5,
-    }
+        "policy_kwargs": {"net_arch": [256, 256], "log_std_init": -1.0},
+    },
 }

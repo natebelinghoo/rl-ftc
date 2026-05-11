@@ -32,8 +32,12 @@ def main():
     parser.add_argument("--fault_aware", type=str2bool, default=True, help="Enable fault-aware observation")
     parser.add_argument("--episodes", type=int, default=20, help="Number of evaluation episodes")
     parser.add_argument("--max_steps", type=int, default=300, help="Max steps per episode")
-    parser.add_argument("--record_video", type=str2bool, default=True, help="Record one evaluation video")
+    parser.add_argument("--record_video", type=str2bool, default=False, help="Record one evaluation video")
+    parser.add_argument("--model_name", type=str, default=None, help="Model folder under outputs/models")
     args = parser.parse_args()
+
+    if args.algo == "dqn" and args.fault not in {"none", "stuck"}:
+        raise SystemExit("DQN uses a discrete meta-action space; only none/stuck faults are valid. Use PPO for gain_loss or bias.")
 
     # 1. 配置
     if args.algo == "dqn":
@@ -79,7 +83,11 @@ def main():
         )
 
     # 3. 加载模型
-    model_path = f"outputs/models/{args.algo}/final_model"
+    preferred_model = args.model_name or f"{args.algo}_aware_{str(args.fault_aware).lower()}"
+    model_path = f"outputs/models/{preferred_model}/final_model"
+    legacy_model_path = f"outputs/models/{args.algo}/final_model"
+    if not os.path.exists(model_path + ".zip") and os.path.exists(legacy_model_path + ".zip"):
+        model_path = legacy_model_path
     if not os.path.exists(model_path + ".zip"):
         print(f"❌ Model not found at {model_path}. Run train.py first!")
         return
